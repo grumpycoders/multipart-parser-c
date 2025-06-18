@@ -161,7 +161,9 @@ size_t multipart_parser_execute(multipart_parser* p, const char *buf, size_t len
         }
 
         if (c == ':') {
-          EMIT_DATA_CB(header_field, buf + mark, i - mark);
+          if (i != mark)
+              EMIT_DATA_CB(header_field, buf + mark, i - mark);
+          NOTIFY_CB(header_field_complete);
           p->state = s_header_value_start;
           break;
         }
@@ -197,7 +199,9 @@ size_t multipart_parser_execute(multipart_parser* p, const char *buf, size_t len
       case s_header_value:
         multipart_log("s_header_value");
         if (c == CR) {
-          EMIT_DATA_CB(header_value, buf + mark, i - mark);
+          if (i != mark)
+              EMIT_DATA_CB(header_value, buf + mark, i - mark);
+          NOTIFY_CB(header_value_complete);
           p->state = s_header_value_almost_done;
           break;
         }
@@ -223,7 +227,8 @@ size_t multipart_parser_execute(multipart_parser* p, const char *buf, size_t len
       case s_part_data:
         multipart_log("s_part_data");
         if (c == CR) {
-            EMIT_DATA_CB(part_data, buf + mark, i - mark);
+            if (i != mark)
+                EMIT_DATA_CB(part_data, buf + mark, i - mark);
             mark = i;
             p->state = s_part_data_almost_boundary;
             p->lookbehind[0] = CR;
